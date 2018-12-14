@@ -1,44 +1,52 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## issues
 
-## Available Scripts
+### 1. can not load the initial embed script when we would like to
 
-In the project directory, you can run:
+We would like to have full control over when this script is placed onto the page.  Currently, if there is no link when the `js2.js` script is executed, the tours will not bootstrap, the `embed.min.js` file will not be loaded and no tours will be displayed.
 
-### `npm start`
+Furthermore, there is no mechanism for us to force a re-evaluation of the links, so the `YVScript` object will continue to be inaccessible
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+#### workaround
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+For the time being, we are using `scriptjs` to get around this by including the `js2.js` only when we know a tour may be viewable.  While this seems to work in practice, there is a possibility of a race condition between React rendering and `YVScript` definition on `window`.
 
-### `npm test`
+On initial render of the page containing the tour, we are reliant on the `embed.min.js` script bootstrapping all links for us, since we do not have a callback for when `YVScript` is available on `window`.
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**example:** This can be seen by the console log in `YouVisitTour.jsx` after directly accessing http://localhost:3000/college/214041
 
-### `npm run build`
+### 2. tour modifies the controlled DOM
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+React is managing our DOM and determining when to add/remove/change DOM nodes.  Because the tour removes our anchor tag during bootstrap of the immersive initialization, React encounters issues when we eventually navigate away from the "page" where the tour is displayed.
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+**example:** Change `showMeIssue2` to `true` in `YouVisitTour.jsx`
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+#### workaround
 
-### `npm run eject`
+We are able to get around this issue by taking the anchor out of React's knowledge and into string based mark-up.  This is a bad practice on our part that we try to avoid at all costs.  We would prefer that the link be simply hidden via css if possible.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### 3. tour is not force closable
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+If a tour is launched into full screen view, the user is still able to navigate via the browser back/forward controls.  In doing so, the page behind the tour is altered, but nothing seems to have changed for the user.
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+**example:**
+1. open https://localhost:3000
+1. select "Colleges"
+1. select a college
+1. play/expand the tour
+1. click the browser back button
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+The tour is still playing, but the user has left the source page of the tour
 
-## Learn More
+### 4. secondary tour does not launch
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+While we can create the immersive image on a secondary "page", clicking the image will not launch the tour
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+**example:**
+1. open https://localhost:3000
+1. select "Colleges"
+1. select a college
+1. launch the tour
+1. close the tour
+1. navigate back to "Colleges"
+1. select a college (a new one or previous one)
+1. attempt to launch the tour
