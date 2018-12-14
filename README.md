@@ -1,3 +1,17 @@
+## how-to
+
+This project can be run via the following steps:
+
+```sh
+# install all dependencies
+npm install
+
+# start the application for local development
+npm start
+```
+
+The application will be accessible via http://localhost:3000
+
 ## issues
 
 ### 1. can not load the initial embed script when we would like to
